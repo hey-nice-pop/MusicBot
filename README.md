@@ -1,5 +1,7 @@
 # MusicBot
 - requirement
 ```
-pip3 install youtube_dl
+pip install yt-dlp
+brew install ffmpeg
+pip install PyNaCl
 ```
