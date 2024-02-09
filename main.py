@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import yt_dlp
+import youtube_dl
 import config
 
 YOUR_BOT_TOKEN = config.YOUR_BOT_TOKEN
@@ -31,26 +32,43 @@ async def join(ctx):
 async def leave(ctx):
     await ctx.voice_client.disconnect()
 
+# 音楽を再生するコマンド
 @bot.command()
 async def play(ctx, url):
     if ctx.voice_client is None:
-        if ctx.author.voice:
-            await ctx.author.voice.channel.connect()
-        else:
-            await ctx.send("ボイスチャンネルに接続していません。")
-            return
+        await ctx.send("Botがボイスチャンネルに接続していません。")
+        return
+
+    # Botがボイスチャンネルに接続していない場合、ユーザーがいるチャンネルに接続
+    if ctx.voice_client is None:
+        await ctx.author.voice.channel.connect()
     else:
+        # Botが既に接続している場合は、現在の再生を停止
         ctx.voice_client.stop()
 
-    FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-    YDL_OPTIONS = {'format': 'bestaudio'}
+    YDL_OPTIONS = {
+        'format': 'bestaudio/best',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'opus',
+            'preferredquality': '192',
+        }],
+        'noplaylist': True,
+    }
+
+    FFMPEG_OPTIONS = {
+        'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+        'options': '-vn',
+    }
 
     with yt_dlp.YoutubeDL(YDL_OPTIONS) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['formats'][0]['url']
-        source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
-        ctx.voice_client.play(source)
-
-    await ctx.send(f'**Now Playing:** {url}')
+        try:
+            info = ydl.extract_info(url, download=False)
+            url2 = info['url']  # yt-dlpでは直接urlキーにアクセスできます
+            source = await discord.FFmpegOpusAudio.from_probe(url2, **FFMPEG_OPTIONS)
+            ctx.voice_client.play(source)
+            await ctx.send(f'**Now Playing:** {info["title"]}')
+        except Exception as e:
+            await ctx.send(f'エラーが発生しました: {e}')
 
 bot.run(YOUR_BOT_TOKEN)
