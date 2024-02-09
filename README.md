@@ -1,5 +1,5 @@
 # MusicBot
 - requirement
 ```
-pip install discord.py[voice] youtube-dl
+pip3 install youtube_dl
 ```
