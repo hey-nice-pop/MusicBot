@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 import yt_dlp
-import youtube_dl
 import config
 
 YOUR_BOT_TOKEN = config.YOUR_BOT_TOKEN
